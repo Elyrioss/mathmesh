@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Security;
 using UnityEngine;
+using UnityEngine.Animations;
+using Debug = UnityEngine.Debug;
 
 
 public class math : MonoBehaviour
@@ -23,25 +26,46 @@ public class math : MonoBehaviour
     
     public MeshFilter FArmR;
     public MeshFilter ArmR;
-    public MeshFilter HandR;
     
     public MeshFilter FArmL;
     public MeshFilter ArmL;
-    public MeshFilter HandL;
     public GameObject mark;
     
     public List<MeshFilter> MF =new List<MeshFilter>();
+
+    public SkinnedMeshRenderer rend;
     
     void Start()
     {
-       //Instantiate(mark, ArmL.GetComponent<MeshRenderer>().bounds.center, Quaternion.identity);
-       //Instantiate(mark, ArmL.GetComponent<MeshRenderer>().bounds.center + GetRoughDirection(ArmL.mesh.vertices) , Quaternion.identity);
-       //Debug.DrawLine(ArmL.GetComponent<MeshRenderer>().bounds.center,ArmL.GetComponent<MeshRenderer>().bounds.center + cen,Color.red,2000,false);
+       
+       SkeletonBone SK; 
+       List<Transform> bones = new List<Transform>();
        foreach (var m in MF)
        {
-           Centroid(m);
+           SK.name = m.gameObject.name;
+           SK.rotation = Quaternion.identity;
+           SK.position = m.GetComponent<MeshRenderer>().bounds.center;
+           SK.scale = Centroid(m);
+           GameObject g = Instantiate(mark, SK.position, SK.rotation);
+           g.transform.localScale = SK.scale;
+           BoneWeight[] weights = new BoneWeight[1];
+
+           weights[0].boneIndex0 = 0;
+           weights[0].weight0 = 1;
+            
+           Matrix4x4[] bindPoses = new Matrix4x4[1];
+
+           bindPoses[0] = g.transform.worldToLocalMatrix * transform.localToWorldMatrix;
+           m.mesh.bindposes = bindPoses;
+           g.name = m.name;
+           
+           bones.Add(g.transform);
+           
        }
-       //Debug.DrawLine(new Vector3(0,0,0),new Vector3(10,10,10),Color.red,2000,false );
+       
+       
+       rend.bones = bones.ToArray();
+      
     }
 
     // Update is called once per frame
@@ -93,9 +117,10 @@ public class math : MonoBehaviour
                         
             Vector3 finalVec = center2 - center1;
             finalVec = finalVec.normalized;
-            finalVec *= (Xdist*2);
+            finalVec *= (Xdist+ Ydist+Zdist);
             Vector3 center = _meshFilter.GetComponent<MeshRenderer>().bounds.center;
             Debug.DrawLine(center-finalVec,center + finalVec,Color.red,2000,false);
+            return (center + finalVec) - (center - finalVec);
         }
         else if (Ydist > Xdist && Ydist > Zdist)
         {
@@ -119,9 +144,10 @@ public class math : MonoBehaviour
             
             Vector3 finalVec = center2 - center1;
             finalVec = finalVec.normalized;
-            finalVec *= (Ydist*2);;
+            finalVec *= (Xdist+Ydist+Zdist);
             Vector3 center = _meshFilter.GetComponent<MeshRenderer>().bounds.center;
             Debug.DrawLine(center-finalVec,center + finalVec,Color.red,2000,false);
+            return (center + finalVec) - (center - finalVec);
         }
         else if(Zdist > Xdist && Zdist > Ydist)
         {
@@ -147,10 +173,10 @@ public class math : MonoBehaviour
                         
             Vector3 finalVec = center2 - center1;
             finalVec = finalVec.normalized;
-            finalVec *= (Zdist*2);;
+            finalVec *= (Xdist+Ydist+Zdist);
             Vector3 center = _meshFilter.GetComponent<MeshRenderer>().bounds.center;
             Debug.DrawLine(center-finalVec,center + finalVec,Color.red,2000,false);
-            
+            return (center + finalVec) - (center - finalVec);
         }
         
         return centroid;
